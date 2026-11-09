@@ -40,3 +40,8 @@ yarn build   # production build
 yarn start   # run the production build
 yarn lint    # lint the code
 ```
+
+### Notes:
+
+- added mocked mass data to simulate the infinite scroll behavior
+- added delay (2s) on every request to simular loaders
