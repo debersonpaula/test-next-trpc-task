@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
+import Button from "./Button";
+import ButtonLink from "./ButtonLink";
+import Input from "./Input";
+import TextArea from "./TextArea";
 import { trpc, errorMessage } from "@/utils/trpc";
 
 type Props = { task?: { id: string; titulo: string; descricao?: string } };
@@ -25,7 +28,8 @@ export default function TaskForm({ task }: Props) {
     setFieldError(null);
     setLoading(true);
     try {
-      if (task) await trpc.task.update.mutate({ id: task.id, titulo, descricao });
+      if (task)
+        await trpc.task.update.mutate({ id: task.id, titulo, descricao });
       else await trpc.task.create.mutate({ titulo, descricao });
       await router.push(`/?msg=${task ? "updated" : "created"}`);
     } catch (err) {
@@ -35,33 +39,36 @@ export default function TaskForm({ task }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 480 }}>
+    <form
+      onSubmit={onSubmit}
+      style={{ display: "grid", gap: 12, maxWidth: 480 }}
+    >
       <h1>{task ? "Editar tarefa" : "Nova tarefa"}</h1>
-      {error && <p role="alert" style={{ color: "crimson" }}>{error}</p>}
-      <label>
-        Título *
-        <input
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          disabled={loading}
-          style={{ display: "block", width: "100%" }}
-        />
-        {fieldError && <small style={{ color: "crimson" }}>{fieldError}</small>}
-      </label>
-      <label>
-        Descrição
-        <textarea
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
-          disabled={loading}
-          style={{ display: "block", width: "100%" }}
-        />
-      </label>
+      {error && (
+        <p role="alert" style={{ color: "crimson" }}>
+          {error}
+        </p>
+      )}
+      <Input
+        label="Título *"
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        disabled={loading}
+        error={fieldError}
+      />
+      <TextArea
+        label="Descrição"
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+        disabled={loading}
+      />
       <div style={{ display: "flex", gap: 12 }}>
-        <button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading}>
           {loading ? "Salvando..." : "Salvar"}
-        </button>
-        <Link href="/">Cancelar</Link>
+        </Button>
+        <ButtonLink href="/" variant="warning">
+          Cancelar
+        </ButtonLink>
       </div>
     </form>
   );
