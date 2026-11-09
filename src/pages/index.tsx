@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GetServerSideProps } from "next";
-import Link from "next/link";
 import { useRouter } from "next/router";
+import Button from "@/components/Button";
+import ButtonLink from "@/components/ButtonLink";
 import { createCaller } from "@/server/routers/_app";
 import type { Task } from "@/server/store";
 import { trpc, errorMessage } from "@/utils/trpc";
@@ -12,8 +13,13 @@ type Page = { items: Task[]; total: number; nextCursor: number | null };
 
 // SSR: the first page is fetched on the server by calling the router directly
 // (no HTTP round-trip). Further pages are loaded by infinite scroll.
-export const getServerSideProps: GetServerSideProps<{ initial: Page }> = async () => {
-  const initial = await createCaller({}).task.list({ limit: PAGE_SIZE, cursor: 0 });
+export const getServerSideProps: GetServerSideProps<{
+  initial: Page;
+}> = async () => {
+  const initial = await createCaller({}).task.list({
+    limit: PAGE_SIZE,
+    cursor: 0,
+  });
   return { props: { initial: JSON.parse(JSON.stringify(initial)) } };
 };
 
@@ -23,9 +29,10 @@ export default function Home({ initial }: { initial: Page }) {
   const [nextCursor, setNextCursor] = useState(initial.nextCursor);
   const [loadingMore, setLoadingMore] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(
-    null
-  );
+  const [feedback, setFeedback] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
   const sentinel = useRef<HTMLDivElement>(null);
 
   // Message coming from the form page (?msg=created|updated), derived from the URL
@@ -40,7 +47,10 @@ export default function Home({ initial }: { initial: Page }) {
     if (nextCursor === null || loadingMore) return;
     setLoadingMore(true);
     try {
-      const page = await trpc.task.list.query({ limit: PAGE_SIZE, cursor: nextCursor });
+      const page = await trpc.task.list.query({
+        limit: PAGE_SIZE,
+        cursor: nextCursor,
+      });
       // Dedupe in case the list shifted between requests
       setTasks((prev) => [
         ...prev,
@@ -58,7 +68,9 @@ export default function Home({ initial }: { initial: Page }) {
   useEffect(() => {
     const el = sentinel.current;
     if (!el) return;
-    const obs = new IntersectionObserver((e) => e[0].isIntersecting && loadMore());
+    const obs = new IntersectionObserver(
+      (e) => e[0].isIntersecting && loadMore(),
+    );
     obs.observe(el);
     return () => obs.disconnect();
   }, [loadMore]);
@@ -78,10 +90,18 @@ export default function Home({ initial }: { initial: Page }) {
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 720 }}>
+    <main
+      style={{
+        padding: 24,
+        maxWidth: 720,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
       <h1>Tarefas</h1>
       <p>
-        <Link href="/tarefas/nova">+ Nova tarefa</Link>
+        <ButtonLink href="/tarefas/nova">+ Nova tarefa</ButtonLink>
       </p>
 
       {feedback ? (
@@ -92,7 +112,11 @@ export default function Home({ initial }: { initial: Page }) {
           {feedback.text}
         </p>
       ) : (
-        urlMsg && <p role="alert" style={{ color: "green" }}>{urlMsg}</p>
+        urlMsg && (
+          <p role="alert" style={{ color: "green" }}>
+            {urlMsg}
+          </p>
+        )
       )}
 
       {tasks.length === 0 && <p>Nenhuma tarefa cadastrada.</p>}
@@ -104,10 +128,14 @@ export default function Home({ initial }: { initial: Page }) {
             {t.descricao && <p>{t.descricao}</p>}
             <small>{new Date(t.dataCriacao).toLocaleString("pt-BR")}</small>
             <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-              <Link href={`/tarefas/${t.id}`}>Editar</Link>
-              <button onClick={() => remove(t.id)} disabled={deleting === t.id}>
+              <ButtonLink href={`/tarefas/${t.id}`}>Editar</ButtonLink>
+              <Button
+                variant="warning"
+                onClick={() => remove(t.id)}
+                disabled={deleting === t.id}
+              >
                 {deleting === t.id ? "Excluindo..." : "Excluir"}
-              </button>
+              </Button>
             </div>
           </li>
         ))}
